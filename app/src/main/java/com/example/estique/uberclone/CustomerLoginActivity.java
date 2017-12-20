@@ -30,6 +30,8 @@ public class CustomerLoginActivity extends AppCompatActivity {
 
     private FirebaseAuth.AuthStateListener authStateListener;
 
+    private final String TAG = "CustomerLoginActivity";
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -49,7 +51,7 @@ public class CustomerLoginActivity extends AppCompatActivity {
                 FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
                 if(user != null) {
-                    Intent intent   = new Intent(CustomerLoginActivity.this, MapActivity.class);
+                    Intent intent   = new Intent(CustomerLoginActivity.this, CustomerMapActivity.class);
                     startActivity(intent);
                     finish();
                     return;
@@ -57,6 +59,9 @@ public class CustomerLoginActivity extends AppCompatActivity {
 
             }
         };
+
+
+
 
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);

@@ -27,7 +27,6 @@
         </activity>
         <activity android:name=".DriverLoginActivity" />
         <activity android:name=".CustomerLoginActivity" />
-        <activity android:name=".MapActivity" />
         <!--
              The API key for Google Maps-based APIs is defined as a string resource.
              (See the file "res/values/google_maps_api.xml").
@@ -43,6 +42,7 @@
         <activity
             android:name=".DriversMapsActivity"
             android:label="@string/title_activity_drivers_maps"></activity>
+        <activity android:name=".CustomerMapActivity"/>
     </application>
 
 </manifest>

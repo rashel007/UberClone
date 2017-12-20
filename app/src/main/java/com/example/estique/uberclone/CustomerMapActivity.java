@@ -10,6 +10,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -22,11 +23,12 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
-public class DriversMapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+public class CustomerMapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener, com.google.android.gms.location.LocationListener {
 
     private GoogleMap mMap;
@@ -36,14 +38,15 @@ public class DriversMapsActivity extends FragmentActivity implements OnMapReadyC
     LocationRequest mLocationRequest;
 
     Location mLastLocation;
+    LatLng pickUpLocation;
 
-    private final String TAG = "DriversMapsActivity";
+    private final String TAG = "CustomerMapActivity";
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_drivers_maps);
+        setContentView(R.layout.activity_customer_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -55,10 +58,35 @@ public class DriversMapsActivity extends FragmentActivity implements OnMapReadyC
                 Log.d(TAG, "logout");
                 FirebaseAuth.getInstance().signOut();
 
-                Intent intent = new Intent(DriversMapsActivity.this, MainActivity.class);
+                Intent intent = new Intent(CustomerMapActivity.this, MainActivity.class);
                 startActivity(intent);
                 finish();
                 return;
+            }
+        });
+
+        final Button buttonRequest = findViewById(R.id.btnRequest);
+        buttonRequest.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                //save user request location to firebase using GeoFire
+
+                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("customersRequest");
+
+                GeoFire geoFire = new GeoFire(ref);
+                geoFire.setLocation(userId, new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()));
+
+                pickUpLocation = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+
+                //add marker on map
+                mMap.addMarker(new MarkerOptions().position(pickUpLocation).title("Pickup here"));
+
+                buttonRequest.setText("Getting your Driver...");
+
+
             }
         });
     }
@@ -106,15 +134,7 @@ public class DriversMapsActivity extends FragmentActivity implements OnMapReadyC
 
         mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
 
-        //save driver latest location to firebase using GeoFire
-        //By this we can check if driver is available for customer
 
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversAvailable");
-
-        GeoFire geoFire = new GeoFire(ref);
-        geoFire.setLocation(userId, new GeoLocation(location.getLatitude(), location.getLongitude()));
     }
 
 
@@ -148,17 +168,5 @@ public class DriversMapsActivity extends FragmentActivity implements OnMapReadyC
     protected void onStop() {
         super.onStop();
 
-        // If driver get out of this activity then we will remove driver location
-        // by this the driver will no longer available to customer
-        String userId;
-        if (FirebaseAuth.getInstance().getCurrentUser() != null)
-            userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        else
-            return;
-
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("driversAvailable");
-
-        GeoFire geoFire = new GeoFire(ref);
-        geoFire.removeLocation(userId);
     }
 }
