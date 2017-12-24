@@ -14,6 +14,8 @@ import android.widget.Button;
 
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
+import com.firebase.geofire.GeoQuery;
+import com.firebase.geofire.GeoQueryEventListener;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationRequest;
@@ -25,6 +27,7 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
@@ -39,6 +42,8 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
     Location mLastLocation;
     LatLng pickUpLocation;
+
+    private boolean locateLocation = false;
 
     private final String TAG = "CustomerMapActivity";
 
@@ -86,9 +91,81 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
                 buttonRequest.setText("Getting your Driver...");
 
+                getClosestDriver();
+
 
             }
         });
+
+
+        findViewById(R.id.btnLocateME).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                locateLocation = false;
+                showMyLocatinOnMap(mLastLocation);
+            }
+        });
+    }
+
+
+    private int radius = 1; // in kilometer
+
+    private Boolean driverFound = false;
+
+    private String driverFoundID;
+
+    private void getClosestDriver(){
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("driverAvailable");
+
+        GeoFire geoFire = new GeoFire(reference);
+
+        GeoQuery geoQuery = geoFire.queryAtLocation(new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()), radius);
+
+        geoQuery.removeAllListeners();
+
+        geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+            @Override
+            public void onKeyEntered(String key, GeoLocation location) {
+
+                if(!driverFound) {
+
+                    driverFound = true;
+                    driverFoundID = key;
+
+                }
+
+            }
+
+            @Override
+            public void onKeyExited(String key) {
+
+            }
+
+            @Override
+            public void onKeyMoved(String key, GeoLocation location) {
+
+            }
+
+            @Override
+            public void onGeoQueryReady() {
+
+                if(!driverFound) {
+
+                    radius++;
+                    getClosestDriver();
+
+                }
+
+            }
+
+            @Override
+            public void onGeoQueryError(DatabaseError error) {
+
+            }
+        });
+
+
+
     }
 
 
@@ -129,11 +206,28 @@ public class CustomerMapActivity extends FragmentActivity implements OnMapReadyC
 
         //move the map camera with user movement and speed
 
-        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        showMyLocatinOnMap(location);
 
-        mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
 
+    }
+
+
+    private void showMyLocatinOnMap(Location location){
+
+        mMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+                locateLocation = true;
+            }
+        });
+
+        if(!locateLocation) {
+
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(17));
+        }
 
     }
 

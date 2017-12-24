@@ -61,6 +61,8 @@ public class DriversMapsActivity extends FragmentActivity implements OnMapReadyC
                 return;
             }
         });
+
+
     }
 
 
@@ -161,4 +163,6 @@ public class DriversMapsActivity extends FragmentActivity implements OnMapReadyC
         GeoFire geoFire = new GeoFire(ref);
         geoFire.removeLocation(userId);
     }
+
+
 }
